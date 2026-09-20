@@ -32,10 +32,14 @@ export interface CandidateEntity {
   name: string;
   domain?: string;
   businessType?: string;
+  description?: string;
   isPhysicalMailSender?: boolean;
+  isLikelyDirectMailer?: boolean;
   reason?: string;
   confidence?: number;
   selected?: boolean;
+  privacyEmail?: string;
+  portalUrl?: string;
 }
 
 export interface OptOutRecord {

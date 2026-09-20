@@ -271,10 +271,13 @@ export default function App() {
   }
 
   // Delete single record
-  async function handleDeleteRecord(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!confirm('Permanently delete this mail opt-out record?')) return;
+  async function handleDeleteRecord(id: string, e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
     setRecords((prev) => prev.filter((r) => r.id !== id));
+    if (selectedRecord?.id === id) {
+      setSelectedRecord(null);
+      setIsVerifyModalOpen(false);
+    }
     try {
       await fetch(`/api/mail-records/${id}`, {
         method: 'DELETE',
@@ -812,6 +815,7 @@ export default function App() {
         }}
         onUpdateRecord={handleUpdateRecord}
         onStatusChange={handleStatusChange}
+        onDeleteRecord={handleDeleteRecord}
       />
 
       {/* Admin Purge Modal: System-wide data deletion */}
