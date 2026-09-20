@@ -1,0 +1,6 @@
+{
+  "name": "TreeSaver",
+  "description": "Automated physical junk mail opt-out platform with camera scanning, interactive bounding box region tagging, Vision AI extraction, and statutory legal notice dispatch.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

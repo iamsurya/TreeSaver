@@ -1,0 +1,35 @@
+{
+  "users": {
+    "admin-1": {
+      "id": "admin-1",
+      "email": "ssharma@exponent.com",
+      "name": "S. Sharma (Admin)",
+      "picture": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "isAdmin": true,
+      "mailingAddress": "1428 Elm Street, Apt 4B, San Francisco, CA 94107"
+    },
+    "user-2": {
+      "id": "user-2",
+      "email": "alex.rivera@gmail.com",
+      "name": "Alex Rivera",
+      "picture": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "isAdmin": false,
+      "mailingAddress": "742 Evergreen Terrace, Springfield, OR 97477"
+    }
+  },
+  "records": {},
+  "auditLogs": [
+    {
+      "timestamp": "2026-09-16T18:29:41.284Z",
+      "action": "SYSTEM_INITIALIZED",
+      "user": "system",
+      "details": "TreeSaver postal document OCR and legal opt-out platform initialized"
+    },
+    {
+      "timestamp": "2026-09-16T18:29:48.580Z",
+      "action": "ADMIN_PURGE_ALL_DATA",
+      "user": "ssharma@exponent.com",
+      "details": "Purged 0 mail records across 2 users."
+    }
+  ]
+}
