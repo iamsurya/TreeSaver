@@ -75,6 +75,72 @@ export async function rotateImage(dataUri: string, degrees = 90): Promise<string
 }
 
 /**
+ * Crops an image to the designated box [ymin, xmin, ymax, xmax] in normalized (0 - 1000) scale.
+ * Converts to physical pixel coordinates, ensures minimum valid size, and outputs a high-quality JPEG data URI.
+ */
+export async function cropImage(
+  dataUri: string,
+  box: [number, number, number, number],
+  quality = 0.88
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const origW = img.naturalWidth || img.width;
+      const origH = img.naturalHeight || img.height;
+
+      const [ymin, xmin, ymax, xmax] = box;
+
+      // Clamp coordinates within 0..1000 range
+      const normXmin = Math.max(0, Math.min(1000, Math.min(xmin, xmax)));
+      const normXmax = Math.max(0, Math.min(1000, Math.max(xmin, xmax)));
+      const normYmin = Math.max(0, Math.min(1000, Math.min(ymin, ymax)));
+      const normYmax = Math.max(0, Math.min(1000, Math.max(ymin, ymax)));
+
+      // If coordinates are invalid or near-zero, retain original
+      if (normXmax - normXmin < 10 || normYmax - normYmin < 10) {
+        resolve(dataUri);
+        return;
+      }
+
+      const pixelX = Math.round((normXmin / 1000) * origW);
+      const pixelY = Math.round((normYmin / 1000) * origH);
+      const pixelW = Math.max(1, Math.round(((normXmax - normXmin) / 1000) * origW));
+      const pixelH = Math.max(1, Math.round(((normYmax - normYmin) / 1000) * origH));
+
+      // Maximum dimension constraint
+      const maxDim = 1920;
+      let targetW = pixelW;
+      let targetH = pixelH;
+
+      if (Math.max(targetW, targetH) > maxDim) {
+        const scale = maxDim / Math.max(targetW, targetH);
+        targetW = Math.round(targetW * scale);
+        targetH = Math.round(targetH * scale);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get 2D canvas context for crop operation'));
+        return;
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, pixelX, pixelY, pixelW, pixelH, 0, 0, targetW, targetH);
+
+      const croppedDataUri = canvas.toDataURL('image/jpeg', quality);
+      resolve(croppedDataUri);
+    };
+    img.onerror = () => reject(new Error('Failed to load image for cropping'));
+    img.src = dataUri;
+  });
+}
+
+/**
  * Compresses an image file from File input to a high-quality JPEG Data URI.
  */
 export async function fileToCompressedDataUri(file: File, maxDimension = 1920, quality = 0.85): Promise<string> {

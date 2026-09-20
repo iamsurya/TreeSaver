@@ -145,33 +145,34 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/80 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto text-stone-100 max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center bg-stone-950 sm:bg-stone-950/80 sm:backdrop-blur-sm sm:p-4 overflow-y-auto">
+      <div className="relative w-full sm:max-w-4xl bg-stone-900 sm:border sm:border-stone-800 sm:rounded-2xl shadow-2xl flex flex-col min-h-full sm:min-h-0 sm:max-h-[92vh] text-stone-100 sm:my-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-stone-900/90 shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-800/60 text-emerald-400">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-800 bg-stone-900/95 shrink-0 pt-safe">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 truncate">
+            <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-stone-50">
+            <div className="truncate">
+              <div className="flex items-center gap-2 truncate">
+                <h2 className="text-sm sm:text-base font-bold text-stone-50 truncate">
                   {companyName || 'Mail Verification Review'}
                 </h2>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                  {Math.round((record.verificationConfidence || 0.9) * 100)}% Confidence
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 shrink-0">
+                  {Math.round((record.verificationConfidence || 0.9) * 100)}%
                 </span>
               </div>
-              <p className="text-xs text-stone-400">
-                Extracted via Gemini Vision AI • Ready for Statutory Opt-Out Enforcement
+              <p className="text-[11px] text-stone-400 truncate">
+                Extracted via Gemini Vision AI • Statutory Opt-Out
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 shrink-0 ml-2">
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"
+              className="p-2 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              title="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -179,53 +180,53 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
         </div>
 
         {/* 3-Tab Segmented Control */}
-        <div className="flex border-b border-stone-800 bg-stone-950/50 px-6 py-2 gap-2 text-xs font-medium shrink-0">
+        <div className="flex border-b border-stone-800 bg-stone-950/70 px-2 sm:px-6 py-1.5 gap-1 sm:gap-2 text-xs font-medium shrink-0 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('details')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-lg transition-colors whitespace-nowrap min-h-[38px] ${
               activeTab === 'details'
-                ? 'bg-stone-800 text-stone-100 shadow-sm border border-stone-700/60'
+                ? 'bg-stone-800 text-stone-100 shadow-sm border border-stone-700/60 font-semibold'
                 : 'text-stone-400 hover:text-stone-200 hover:bg-stone-900/40'
             }`}
           >
             <Building2 className="w-3.5 h-3.5 text-sky-400" />
-            <span>Extracted Details & Target</span>
+            <span>Details & Target</span>
           </button>
 
           <button
             onClick={() => setActiveTab('photo')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-lg transition-colors whitespace-nowrap min-h-[38px] ${
               activeTab === 'photo'
-                ? 'bg-stone-800 text-stone-100 shadow-sm border border-stone-700/60'
+                ? 'bg-stone-800 text-stone-100 shadow-sm border border-stone-700/60 font-semibold'
                 : 'text-stone-400 hover:text-stone-200 hover:bg-stone-900/40'
             }`}
           >
             <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
-            <span>Annotated Photo Review</span>
+            <span>Photo Review</span>
           </button>
 
           <button
             onClick={() => setActiveTab('legal')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-lg transition-colors whitespace-nowrap min-h-[38px] ${
               activeTab === 'legal'
-                ? 'bg-stone-800 text-stone-100 shadow-sm border border-stone-700/60'
+                ? 'bg-stone-800 text-stone-100 shadow-sm border border-stone-700/60 font-semibold'
                 : 'text-stone-400 hover:text-stone-200 hover:bg-stone-900/40'
             }`}
           >
             <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Formal Legal Notice</span>
+            <span>Legal Notice</span>
           </button>
         </div>
 
         {/* Tab 1: Annotated Photo Review */}
         {activeTab === 'photo' && (
-          <div className="p-6 flex-1 overflow-y-auto flex flex-col items-center">
-            <div className="w-full flex items-center justify-between mb-3 text-xs text-stone-400">
-              <span>Original document with active OCR bounding boxes:</span>
+          <div className="p-3 sm:p-6 flex-1 overflow-y-auto flex flex-col items-center">
+            <div className="w-full flex items-center justify-between mb-2 text-xs text-stone-400">
+              <span>Original document with OCR boxes:</span>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setZoomLevel((z) => Math.max(z - 0.25, 0.75))}
-                  className="p-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-300"
+                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 min-h-[36px] min-w-[36px] flex items-center justify-center"
                   title="Zoom out"
                 >
                   <ZoomOut className="w-4 h-4" />
@@ -233,7 +234,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                 <span className="font-mono text-[11px]">{Math.round(zoomLevel * 100)}%</span>
                 <button
                   onClick={() => setZoomLevel((z) => Math.min(z + 0.25, 2.5))}
-                  className="p-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-300"
+                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 min-h-[36px] min-w-[36px] flex items-center justify-center"
                   title="Zoom in"
                 >
                   <ZoomIn className="w-4 h-4" />
@@ -241,7 +242,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
               </div>
             </div>
 
-            <div className="relative w-full max-h-[58vh] bg-stone-950 border border-stone-800 rounded-xl overflow-auto flex items-center justify-center p-4">
+            <div className="relative w-full flex-1 min-h-[45vh] bg-stone-950 border border-stone-800 rounded-xl overflow-auto flex items-center justify-center p-2 sm:p-4">
               <div
                 className="relative transition-transform duration-150"
                 style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
@@ -249,7 +250,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                 <img
                   src={record.imageUrl}
                   alt="Scanned Physical Mail Piece"
-                  className="max-h-[52vh] max-w-full object-contain rounded shadow-lg block"
+                  className="max-h-[50vh] max-w-full object-contain rounded shadow-lg block"
                 />
 
                 {/* Overlaid Normalized Bounding Boxes */}
@@ -294,15 +295,15 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
 
         {/* Tab 2: Extracted Details & Corporate Target */}
         {activeTab === 'details' && (
-          <div className="p-6 flex-1 overflow-y-auto space-y-6">
+          <div className="p-3 sm:p-6 flex-1 overflow-y-auto space-y-4 sm:space-y-6">
             {/* Grounding Source Badge */}
             {record.groundingSources && record.groundingSources.length > 0 && (
-              <div className="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-xl flex items-start space-x-3">
+              <div className="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-xl flex items-start space-x-2.5">
                 <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-semibold text-emerald-300">Grounded Search Verification: </span>
                   <span className="text-stone-300">
-                    Target contact verified against corporate privacy compliance records.
+                    Target contact verified against privacy compliance records.
                   </span>
                   <div className="mt-1 flex flex-wrap gap-2">
                     {record.groundingSources.map((s, idx) => (
@@ -322,9 +323,9 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {/* Sender Details */}
-              <div className="p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-3">
+              <div className="p-3 sm:p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-2.5">
                 <h3 className="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5" />
                   Originating Mailer / Brand
@@ -336,7 +337,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -347,7 +348,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                     value={companyDomain}
                     onChange={(e) => setCompanyDomain(e.target.value)}
                     placeholder="e.g. company.com"
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
 
@@ -357,13 +358,13 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                     rows={2}
                     value={senderAddress}
                     onChange={(e) => setSenderAddress(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
               </div>
 
               {/* Recipient & Identification */}
-              <div className="p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-3">
+              <div className="p-3 sm:p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-2.5">
                 <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Recipient & Household Match
@@ -375,7 +376,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                     type="text"
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -385,7 +386,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                     rows={2}
                     value={recipientAddress}
                     onChange={(e) => setRecipientAddress(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
 
@@ -399,13 +400,13 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                       value={customerNumber}
                       onChange={(e) => setCustomerNumber(e.target.value)}
                       placeholder="e.g. VP-94107-8842-X9091"
-                      className="flex-1 bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
+                      className="flex-1 bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 focus:outline-none focus:border-emerald-500 font-mono"
                     />
                     {customerNumber && (
                       <button
                         onClick={handleCopyCustomerNumber}
-                        className="px-2.5 py-1.5 bg-stone-800 hover:bg-stone-700 rounded-lg text-xs font-medium text-stone-300 flex items-center gap-1"
-                        title="Copy customer code to clipboard"
+                        className="px-3 py-2 bg-stone-800 hover:bg-stone-700 rounded-lg text-xs font-medium text-stone-300 flex items-center gap-1 min-h-[40px]"
+                        title="Copy customer code"
                       >
                         {isCopiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                         <span>{isCopiedCode ? 'Copied' : 'Copy'}</span>
@@ -417,21 +418,21 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
             </div>
 
             {/* Postal Tracking & BRM Metadata */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-1.5">
                 <label className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-                  Decoded USPS IMb Barcode (20/31-Digit)
+                  USPS IMb Barcode
                 </label>
                 <input
                   type="text"
                   value={postalBarcodeDigits}
                   onChange={(e) => setPostalBarcodeDigits(e.target.value)}
                   placeholder="e.g. 0070104847291048572910485920194"
-                  className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 font-mono"
+                  className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 font-mono"
                 />
               </div>
 
-              <div className="p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-2">
+              <div className="p-3 sm:p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-1.5">
                 <label className="text-xs font-bold text-orange-400 uppercase tracking-wider block">
                   Business Reply Permit / Indicia
                 </label>
@@ -439,19 +440,19 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                   type="text"
                   value={permitNumber}
                   onChange={(e) => setPermitNumber(e.target.value)}
-                  placeholder="e.g. FIRST-CLASS MAIL PERMIT NO. 1112"
-                  className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 font-mono"
+                  placeholder="e.g. PERMIT NO. 1112"
+                  className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 font-mono"
                 />
               </div>
             </div>
 
             {/* Target Contact & Dispatch Channel */}
-            <div className="p-4 bg-emerald-950/20 border border-emerald-800/40 rounded-xl space-y-3">
+            <div className="p-3 sm:p-4 bg-emerald-950/20 border border-emerald-800/40 rounded-xl space-y-3">
               <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                 Corporate Suppression Target
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 <div className="sm:col-span-2">
                   <label className="text-[11px] text-stone-400 block mb-1">
                     Verified Opt-Out Email / Destination
@@ -460,7 +461,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                     type="text"
                     value={targetContact}
                     onChange={(e) => setTargetContact(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 font-mono"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 font-mono"
                   />
                 </div>
 
@@ -469,7 +470,7 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
                   <select
                     value={channelType}
                     onChange={(e) => setChannelType(e.target.value as any)}
-                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100"
+                    className="w-full bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 min-h-[40px]"
                   >
                     <option value="DIRECT_EMAIL">Direct Email</option>
                     <option value="WEB_PORTAL">Web Opt-Out Portal</option>
@@ -481,18 +482,18 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
               {portalUrl && (
                 <div>
                   <label className="text-[11px] text-stone-400 block mb-1">Official Opt-Out Web Portal URL</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={portalUrl}
                       onChange={(e) => setPortalUrl(e.target.value)}
-                      className="flex-1 bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-100 font-mono"
+                      className="flex-1 bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-sm sm:text-xs text-stone-100 font-mono"
                     />
                     <a
                       href={portalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium flex items-center gap-1.5"
+                      className="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 min-h-[40px]"
                     >
                       <span>Open Portal</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -502,10 +503,10 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
               )}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-1">
               <button
                 onClick={handleSaveForm}
-                className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium transition-colors"
+                className="w-full sm:w-auto px-5 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-semibold transition-colors min-h-[42px]"
               >
                 Save Details
               </button>
@@ -515,20 +516,20 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
 
         {/* Tab 3: Formal Legal Notice */}
         {activeTab === 'legal' && (
-          <div className="p-6 flex-1 overflow-y-auto space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="p-3 sm:p-6 flex-1 overflow-y-auto space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-bold text-stone-100">
+                <h3 className="text-xs sm:text-sm font-bold text-stone-100">
                   Enforceable Statutory Cease-and-Desist Demand
                 </h3>
-                <p className="text-xs text-stone-400">
-                  Cited under USPS Prohibitory Order 39 U.S.C. § 3008, DMA Choice, and state consumer privacy laws.
+                <p className="text-[11px] text-stone-400">
+                  Cited under USPS 39 U.S.C. § 3008, DMA Choice, and state consumer privacy laws.
                 </p>
               </div>
 
               <button
                 onClick={handleCopyNotice}
-                className="flex items-center space-x-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium transition-colors"
+                className="self-start sm:self-auto flex items-center space-x-1.5 px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium transition-colors min-h-[38px]"
               >
                 {isCopiedNotice ? (
                   <>
@@ -546,20 +547,20 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
 
             <div className="relative">
               <textarea
-                rows={16}
+                rows={14}
                 value={legalNoticeText}
                 onChange={(e) => setLegalNoticeText(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 rounded-xl p-4 text-xs font-mono text-stone-200 leading-relaxed focus:outline-none focus:border-emerald-500"
+                className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 sm:p-4 text-xs font-mono text-stone-200 leading-relaxed focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
         )}
 
-        {/* One-Click Dispatch Footer */}
-        <div className="p-4 sm:px-6 bg-stone-950 border-t border-stone-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        {/* One-Click Dispatch Footer (Thumb-friendly on mobile) */}
+        <div className="p-3 sm:p-5 bg-stone-950 border-t border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 pb-safe">
           <div className="flex items-center space-x-2 text-xs text-stone-400">
-            <Clock className="w-4 h-4 text-stone-500" />
-            <span>
+            <Clock className="w-4 h-4 text-stone-500 shrink-0" />
+            <span className="truncate">
               Status:{' '}
               <strong className="text-stone-200">
                 {record.status === 'OPT_OUT_SUBMITTED' ? 'Opt-Out Submitted' : 'Ready for Dispatch'}
@@ -567,16 +568,16 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
             {/* Direct Web Portal Link */}
             {portalUrl && (
               <button
                 onClick={handleOpenWebPortal}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium border border-stone-700 transition-colors"
-                title="Open official corporate suppression form with account number copied"
+                className="flex items-center justify-center space-x-1 px-3 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl text-xs font-medium border border-stone-700 min-h-[42px]"
+                title="Open official corporate suppression form"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
-                <span>Web Opt-Out Portal</span>
+                <span className="truncate">Web Portal</span>
               </button>
             )}
 
@@ -584,11 +585,11 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
             {targetContact.includes('@') && (
               <button
                 onClick={handleOpenMailto}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-medium border border-stone-700 transition-colors"
-                title="Send via default desktop mail client"
+                className="flex items-center justify-center space-x-1 px-3 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl text-xs font-medium border border-stone-700 min-h-[42px]"
+                title="Send via default mail app"
               >
                 <Mail className="w-3.5 h-3.5" />
-                <span>Default Mail Client</span>
+                <span className="truncate">Mail App</span>
               </button>
             )}
 
@@ -596,18 +597,18 @@ export const VerifyMailModal: React.FC<VerifyMailModalProps> = ({
             {targetContact.includes('@') && (
               <button
                 onClick={handleOpenGmailCompose}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-900/60 hover:bg-red-800 text-red-100 rounded-lg text-xs font-semibold border border-red-700/60 shadow-md transition-all active:scale-95"
-                title="Open pre-filled Gmail Web Compose in new tab"
+                className="flex items-center justify-center space-x-1 px-3 py-2.5 bg-red-950/60 hover:bg-red-900 text-red-100 rounded-xl text-xs font-semibold border border-red-800/60 min-h-[42px]"
+                title="Open Gmail Web Compose"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Gmail Web Compose</span>
+                <Send className="w-3.5 h-3.5 text-red-400" />
+                <span className="truncate">Gmail Compose</span>
               </button>
             )}
 
             {/* Mark as Sent */}
             <button
               onClick={handleMarkAsSubmitted}
-              className="flex items-center space-x-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-950/40 transition-all active:scale-95"
+              className="col-span-2 sm:col-auto flex items-center justify-center space-x-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-950/50 transition-all active:scale-95 min-h-[44px]"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Mark as Opted-Out</span>

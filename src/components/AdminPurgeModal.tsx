@@ -53,26 +53,26 @@ export const AdminPurgeModal: React.FC<AdminPurgeModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/85 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-stone-900 border border-red-900/40 rounded-2xl shadow-2xl overflow-hidden text-stone-100 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/85 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-stone-900 border border-red-900/40 rounded-2xl shadow-2xl overflow-hidden text-stone-100 p-4 sm:p-6 my-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400">
+        <div className="flex items-start justify-between mb-4 gap-2">
+          <div className="flex items-center space-x-3 truncate">
+            <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400 shrink-0">
               <ShieldAlert className="w-6 h-6" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-red-100">
+            <div className="truncate">
+              <h2 className="text-sm sm:text-base font-bold text-red-100 truncate">
                 Administrative System Purge
               </h2>
-              <p className="text-xs text-stone-400">
-                Global Data Deletion Authority • Administrator: {adminEmail}
+              <p className="text-[11px] text-stone-400 truncate">
+                Global Data Deletion Authority • {adminEmail}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800"
+            className="p-2 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -93,7 +93,7 @@ export const AdminPurgeModal: React.FC<AdminPurgeModalProps> = ({
                 setConfirmationWord('');
                 onClose();
               }}
-              className="px-6 py-2 bg-stone-800 hover:bg-stone-700 text-stone-100 rounded-lg text-xs font-semibold"
+              className="w-full sm:w-auto px-6 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-100 rounded-xl text-xs font-semibold min-h-[42px]"
             >
               Close Console
             </button>
@@ -125,21 +125,21 @@ export const AdminPurgeModal: React.FC<AdminPurgeModalProps> = ({
                 value={confirmationWord}
                 onChange={(e) => setConfirmationWord(e.target.value.toUpperCase())}
                 placeholder="PURGE"
-                className="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 font-mono tracking-widest text-sm focus:outline-none focus:border-red-500"
+                className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3.5 py-2.5 text-stone-100 font-mono tracking-widest text-base focus:outline-none focus:border-red-500"
               />
             </div>
 
-            <div className="pt-2 flex justify-end space-x-3">
+            <div className="pt-2 flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg font-medium transition-colors"
+                className="w-full sm:w-auto px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl font-medium transition-colors min-h-[42px] order-2 sm:order-1"
               >
                 Cancel
               </button>
               <button
                 disabled={confirmationWord !== 'PURGE' || isPurging}
                 onClick={handleExecutePurge}
-                className="flex items-center space-x-2 px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-30 disabled:pointer-events-none text-white rounded-lg font-semibold shadow-lg shadow-red-950/40 transition-all"
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-30 disabled:pointer-events-none text-white rounded-xl font-semibold shadow-lg shadow-red-950/40 transition-all min-h-[44px] order-1 sm:order-2"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>{isPurging ? 'Purging All System Data...' : 'Purge All User Data'}</span>

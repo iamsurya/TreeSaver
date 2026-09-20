@@ -6,26 +6,35 @@ interface FloatingJobDrawerProps {
   records: OptOutRecord[];
   onOpenRecord: (record: OptOutRecord) => void;
   onDismissJob?: (id: string) => void;
+  dismissedJobIds?: Set<string>;
 }
 
 export const FloatingJobDrawer: React.FC<FloatingJobDrawerProps> = ({
   records,
   onOpenRecord,
+  onDismissJob,
+  dismissedJobIds,
 }) => {
   const processingJobs = records.filter((r) => r.status === 'PROCESSING' || r.status === 'QUEUED');
-  const readyJobs = records.filter((r) => r.status === 'READY_FOR_VERIFICATION');
+  const readyJobs = records.filter(
+    (r) => r.status === 'READY_FOR_VERIFICATION' && (!dismissedJobIds || !dismissedJobIds.has(r.id))
+  );
 
   if (processingJobs.length === 0 && readyJobs.length === 0) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 max-w-md w-full px-4 pointer-events-none">
+    <div
+      id="floating-job-drawer"
+      className="fixed bottom-20 sm:bottom-6 inset-x-0 sm:inset-x-auto sm:right-6 z-50 max-w-md mx-auto sm:mx-0 w-full px-3 sm:px-4 pointer-events-none pb-safe"
+    >
       <div className="space-y-2 pointer-events-auto">
         {/* In-flight processing banner */}
         {processingJobs.map((job) => (
           <div
             key={job.id}
+            id={`job-banner-${job.id}`}
             className="flex items-center justify-between p-3.5 bg-stone-900 border border-stone-700/80 rounded-xl shadow-2xl text-stone-100 backdrop-blur-md animate-pulse"
           >
             <div className="flex items-center space-x-3 overflow-hidden">
@@ -49,6 +58,7 @@ export const FloatingJobDrawer: React.FC<FloatingJobDrawerProps> = ({
         {readyJobs.slice(0, 2).map((job) => (
           <div
             key={job.id}
+            id={`job-ready-banner-${job.id}`}
             onClick={() => onOpenRecord(job)}
             className="flex items-center justify-between p-3.5 bg-emerald-950/90 border border-emerald-700/80 rounded-xl shadow-2xl text-stone-100 backdrop-blur-md cursor-pointer hover:bg-emerald-900 transition-all hover:scale-[1.01]"
           >
@@ -63,10 +73,29 @@ export const FloatingJobDrawer: React.FC<FloatingJobDrawerProps> = ({
                 </p>
               </div>
             </div>
-            <button className="flex items-center space-x-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shrink-0 ml-2 shadow-sm">
-              <span>Verify</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
+            <div className="flex items-center space-x-1.5 shrink-0 ml-2">
+              <button
+                id={`btn-verify-${job.id}`}
+                className="flex items-center space-x-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm"
+              >
+                <span>Verify</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+              {onDismissJob && (
+                <button
+                  id={`btn-dismiss-${job.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismissJob(job.id);
+                  }}
+                  className="p-1 rounded-md text-emerald-400/70 hover:text-emerald-200 hover:bg-emerald-900/60 transition-colors"
+                  title="Dismiss notification"
+                  aria-label="Dismiss notification"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
