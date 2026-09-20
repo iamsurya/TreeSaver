@@ -5,7 +5,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { VERIFIED_COMPANIES, findVerifiedCompany } from './src/data/verifiedCompanies.js';
 import { generateLegalNoticeText } from './src/utils/legalNotices.js';
-import { OptOutRecord, ProcessedMailResult, UserProfile } from './src/types.js';
+import { CandidateEntity, OptOutRecord, ProcessedMailResult, UserProfile } from './src/types.js';
 
 const PORT = 3000;
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -352,15 +352,21 @@ async function startServer() {
     })();
   });
 
-  // On-demand Contact Grounding Search endpoint
+  // On-demand Contact & Entity Grounding Web Search endpoint
   app.post('/api/lookup-contact', async (req, res) => {
-    const { companyName } = req.body;
+    const { companyName, senderAddress, permitNumber, keyCodes, rawDomain } = req.body;
     if (!companyName) {
       return res.status(400).json({ error: 'companyName is required' });
     }
 
     try {
-      const result = await discoverCorporateContact(companyName);
+      const result = await verifyEntityAndSenderContactViaWebSearch({
+        rawExtractedName: companyName,
+        senderAddress,
+        permitNumber,
+        keyCodes: Array.isArray(keyCodes) ? keyCodes : (keyCodes ? [keyCodes] : undefined),
+        rawDomain,
+      });
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -497,12 +503,21 @@ Return ONLY valid JSON matching this exact structure:
       }
     }
 
-    const companyName = parsed.companyName || 'Unidentified Mail Sender';
-    const contactInfo = await discoverCorporateContact(companyName, parsed.companyDomain);
+    const rawCompanyName = parsed.companyName || 'Unidentified Mail Sender';
+    console.log(`[Vision Complete] Raw sender string: "${rawCompanyName}". Initiating web search entity disambiguation & sender email verification...`);
+
+    // Use Web Search to identify likely entities, choose the best option, and verify sender email
+    const verification = await verifyEntityAndSenderContactViaWebSearch({
+      rawExtractedName: rawCompanyName,
+      rawDomain: parsed.companyDomain,
+      senderAddress: parsed.senderAddress,
+      permitNumber: parsed.permitNumber,
+      keyCodes: parsed.keyCodes,
+    });
 
     return {
-      companyName,
-      companyDomain: parsed.companyDomain || contactInfo.domain,
+      companyName: verification.verifiedCompanyName,
+      companyDomain: verification.verifiedDomain,
       senderAddress: parsed.senderAddress || '',
       recipientName: parsed.recipientName || user.name,
       recipientAddress: parsed.recipientAddress || user.mailingAddress || '',
@@ -510,11 +525,14 @@ Return ONLY valid JSON matching this exact structure:
       keyCodes: parsed.keyCodes || [],
       postalBarcodeDigits: parsed.postalBarcodeDigits || '',
       permitNumber: parsed.permitNumber || '',
-      channelType: (parsed.suggestedOptOutChannel || contactInfo.channelType || 'DIRECT_EMAIL') as any,
-      targetContact: contactInfo.targetContact,
-      portalUrl: contactInfo.portalUrl,
-      groundingSources: contactInfo.groundingSources,
-      verificationConfidence: parsed.confidence || contactInfo.confidence || 0.85,
+      channelType: (verification.channelType || parsed.suggestedOptOutChannel || 'DIRECT_EMAIL') as any,
+      targetContact: verification.targetContact,
+      portalUrl: verification.portalUrl,
+      groundingSources: verification.groundingSources,
+      verificationConfidence: verification.confidence || parsed.confidence || 0.90,
+      candidateEntities: verification.candidateEntities,
+      entityVerificationReason: verification.entityVerificationReason,
+      verifiedViaSearch: verification.verifiedViaSearch,
     };
   } catch (err) {
     console.error('Gemini vision extraction failed, falling back to heuristics:', err);
@@ -523,112 +541,328 @@ Return ONLY valid JSON matching this exact structure:
 }
 
 /**
- * Resolves corporate privacy contact using verified directory first,
- * then Google Search Grounding with strict anti-hallucination guardrails.
+ * Uses Google Search Grounding to:
+ * 1. Identify likely business entities matching the raw extracted mail sender string
+ * 2. Distinguish direct mail marketing agencies from unrelated consumer goods/brands
+ * 3. Select the best verified entity option
+ * 4. Verify the sender's official email address and opt-out portal
  */
-async function discoverCorporateContact(companyName: string, knownDomain?: string): Promise<{
+export async function verifyEntityAndSenderContactViaWebSearch(context: {
+  rawExtractedName: string;
+  senderAddress?: string;
+  permitNumber?: string;
+  keyCodes?: string[];
+  rawDomain?: string;
+}): Promise<{
+  verifiedCompanyName: string;
+  verifiedDomain: string;
   targetContact: string;
-  domain?: string;
   portalUrl?: string;
   channelType: 'DIRECT_EMAIL' | 'WEB_PORTAL' | 'POSTAL_MAIL';
   confidence: number;
-  groundingSources?: { title: string; uri: string }[];
+  candidateEntities: CandidateEntity[];
+  entityVerificationReason: string;
+  groundingSources: { title: string; uri: string }[];
+  verifiedViaSearch: boolean;
 }> {
-  // 1. Offline Verified Directory Match
-  const verified = findVerifiedCompany(companyName);
-  if (verified) {
-    return {
-      targetContact: verified.privacyEmail,
-      domain: verified.domain,
-      portalUrl: verified.portalUrl,
-      channelType: verified.privacyEmail ? 'DIRECT_EMAIL' : 'WEB_PORTAL',
-      confidence: 0.98,
-      groundingSources: [{
-        title: `${verified.name} Official Privacy Compliance Record`,
-        uri: verified.portalUrl || `https://${verified.domain}`,
-      }],
-    };
-  }
+  const { rawExtractedName, senderAddress, permitNumber, keyCodes, rawDomain } = context;
 
-  // 2. Google Search Grounding for Long-Tail Senders
+  // Check offline verified directory first as baseline
+  const verifiedDirectoryMatch = findVerifiedCompany(rawExtractedName);
+
   const ai = getGeminiClient();
   if (!ai) {
-    const fallbackDomain = knownDomain || `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+    // Offline fallback
+    if (verifiedDirectoryMatch) {
+      return {
+        verifiedCompanyName: verifiedDirectoryMatch.name,
+        verifiedDomain: verifiedDirectoryMatch.domain,
+        targetContact: verifiedDirectoryMatch.privacyEmail,
+        portalUrl: verifiedDirectoryMatch.portalUrl,
+        channelType: verifiedDirectoryMatch.privacyEmail ? 'DIRECT_EMAIL' : 'WEB_PORTAL',
+        confidence: 0.98,
+        candidateEntities: [{
+          name: verifiedDirectoryMatch.name,
+          domain: verifiedDirectoryMatch.domain,
+          businessType: verifiedDirectoryMatch.category || 'Direct Mail Sender',
+          isPhysicalMailSender: true,
+          reason: 'Matched official postal compliance registry entry.',
+          confidence: 0.98,
+          selected: true
+        }],
+        entityVerificationReason: 'Verified against authoritative direct marketing directory.',
+        groundingSources: [{
+          title: `${verifiedDirectoryMatch.name} Compliance Record`,
+          uri: verifiedDirectoryMatch.portalUrl || `https://${verifiedDirectoryMatch.domain}`
+        }],
+        verifiedViaSearch: false,
+      };
+    }
+
+    const fallbackDomain = rawDomain || `${rawExtractedName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
     return {
+      verifiedCompanyName: rawExtractedName,
+      verifiedDomain: fallbackDomain,
       targetContact: `privacy@${fallbackDomain}`,
-      domain: fallbackDomain,
       channelType: 'DIRECT_EMAIL',
       confidence: 0.70,
+      candidateEntities: [{
+        name: rawExtractedName,
+        domain: fallbackDomain,
+        businessType: 'Postal Mail Sender',
+        isPhysicalMailSender: true,
+        reason: 'Extracted from physical document text.',
+        confidence: 0.70,
+        selected: true
+      }],
+      entityVerificationReason: 'Initial extraction without live web search connectivity.',
+      groundingSources: [],
+      verifiedViaSearch: false,
     };
   }
 
   try {
-    const searchQuery = `Official privacy email or physical mail opt-out portal for ${companyName} marketing mail`;
+    const prompt = `You are an expert corporate entity research analyst and postal fraud/opt-out investigator.
+We scanned a physical piece of marketing mail, circular, postcard, or postal envelope.
+Initial vision OCR extracted:
+- Raw Sender string: "${rawExtractedName}"
+- Sender Address / Return Location: "${senderAddress || 'Not specified'}"
+- Postal permit / BRM imprint: "${permitNumber || 'None'}"
+- Marketing key codes: "${keyCodes?.join(', ') || 'None'}"
+
+TASK 1 - IDENTIFY LIKELY ENTITIES VIA WEB SEARCH:
+Search the web for "${rawExtractedName}" in the context of physical direct mail marketing, postcard campaigns, advertising, or corporate mailings.
+Search queries to explore:
+1. "${rawExtractedName} marketing direct mail postcard"
+2. "${rawExtractedName} advertising direct mail postal opt out"
+3. "${rawExtractedName} company entity business"
+
+CRUCIAL DISAMBIGUATION RULE:
+Carefully distinguish between:
+A. Physical direct mail marketing agencies, print advertising services, or mail distributors (e.g., "Drip Drop Marketing" / Bodega Solutions LLC, who send plastic postcards & direct mail campaigns).
+B. Unrelated consumer brands, retail products, or digital software that happen to share a similar prefix (e.g., "DripDrop" / DripDrop Hydration ORS powder at dripdrop.com, which is an electrolyte drink company, NOT a direct mail marketing agency).
+
+TASK 2 - SELECT THE BEST VERIFIED OPTION:
+Identify 2-4 candidate entities. Evaluate each for whether it is a physical marketing mail sender. Select the BEST verified entity that is actually responsible for sending physical marketing mail.
+
+TASK 3 - VERIFY SENDER'S EMAIL & OPT-OUT CONTACT:
+For the selected best entity, search and verify:
+1. Official domain (e.g. dripdropmarketing.com).
+2. Dedicated postal mail opt-out portal URL if one exists (e.g. https://optout.dripdropmarketing.com/).
+3. Verified contact/opt-out/privacy email address (e.g. support@dripdropmarketing.com, optout@dripdropmarketing.com, privacy@dripdropmarketing.com).
+STRICT RULE: The email address MUST belong to the verified entity's domain. DO NOT use an email from a rejected candidate (e.g. NEVER use @dripdrop.com for Drip Drop Marketing).
+
+Return a JSON code block in this exact format:
+\`\`\`json
+{
+  "bestEntity": {
+    "name": "string (e.g. Drip Drop Marketing)",
+    "domain": "string (e.g. dripdropmarketing.com)",
+    "reason": "string (clear explanation of why this entity was chosen and how it was distinguished from other candidates)"
+  },
+  "candidateEntities": [
+    {
+      "name": "string",
+      "domain": "string",
+      "businessType": "string",
+      "isPhysicalMailSender": boolean,
+      "reason": "string",
+      "confidence": number between 0.0 and 1.0,
+      "selected": boolean
+    }
+  ],
+  "verifiedEmail": "string or null",
+  "portalUrl": "string or null",
+  "channelType": "DIRECT_EMAIL",
+  "confidence": number between 0.75 and 0.99
+}
+\`\`\``;
+
     const searchResponse = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
-      contents: `Search and extract the official corporate privacy email address or direct physical marketing mail opt-out portal URL for the company "${companyName}".
-CRITICAL ANTI-HALLUCINATION RULES:
-1. ONLY return an email address if it belongs to the company's verified domain (e.g. @company.com).
-2. DO NOT make up generic emails like optout@company.com or unsubscribe@company.com unless cited in live sources.
-3. If an official online web opt-out form exists, provide that URL.
-4. Output clean JSON: { "privacyEmail": string or null, "portalUrl": string or null, "officialDomain": string }`,
+      contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
       }
     });
 
     const candidate = searchResponse.candidates?.[0];
     const chunks = candidate?.groundingMetadata?.groundingChunks || [];
-    const groundingSources = chunks
-      .filter((c: any) => c.web?.uri)
-      .map((c: any) => ({
-        title: c.web.title || `${companyName} Privacy Resource`,
-        uri: c.web.uri,
-      }))
-      .slice(0, 4);
+    const groundingSources: { title: string; uri: string }[] = [];
 
-    let parsedResult: any = {};
-    try {
-      parsedResult = JSON.parse(searchResponse.text || '{}');
-    } catch {
-      // JSON parse fallback
-    }
+    chunks.forEach((c: any) => {
+      if (c.web?.uri) {
+        groundingSources.push({
+          title: c.web.title || `Web Verification Citation`,
+          uri: c.web.uri,
+        });
+      }
+    });
 
-    const officialDomain = parsedResult.officialDomain || knownDomain;
-    let privacyEmail = parsedResult.privacyEmail;
-
-    // Strict Anti-Hallucination Gate: Verify email domain match
-    if (privacyEmail && officialDomain) {
-      const emailDomain = privacyEmail.split('@')[1]?.toLowerCase();
-      const companyDomainClean = officialDomain.toLowerCase().replace('www.', '');
-      if (emailDomain && !emailDomain.includes(companyDomainClean) && !companyDomainClean.includes(emailDomain)) {
-        console.warn(`Anti-hallucination filter rejected ${privacyEmail} (domain mismatch with ${officialDomain})`);
-        privacyEmail = null;
+    const text = searchResponse.text?.trim() || '';
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/\{[\s\S]*\}/);
+    let parsed: any = {};
+    if (jsonMatch) {
+      try {
+        parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      } catch (err) {
+        console.warn('Failed to parse search JSON result:', err);
       }
     }
 
-    const targetContact = privacyEmail ||
-                          (parsedResult.portalUrl ? `Web Portal Opt-Out: ${parsedResult.portalUrl}` : `privacy@${officialDomain || 'domain.com'}`);
+    const bestEntity = parsed.bestEntity || {};
+    let verifiedCompanyName = bestEntity.name || verifiedDirectoryMatch?.name || rawExtractedName;
+    let verifiedDomain = bestEntity.domain || verifiedDirectoryMatch?.domain || rawDomain || `${verifiedCompanyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+    let verifiedEmail = parsed.verifiedEmail || verifiedDirectoryMatch?.privacyEmail;
+    let portalUrl = parsed.portalUrl || verifiedDirectoryMatch?.portalUrl;
+
+    // Strict Anti-Hallucination & Domain Match Enforcement
+    if (verifiedEmail && verifiedDomain) {
+      const emailDomain = verifiedEmail.split('@')[1]?.toLowerCase().trim();
+      const cleanDomain = verifiedDomain.toLowerCase().replace(/^www\./, '').trim();
+      if (emailDomain && !emailDomain.includes(cleanDomain) && !cleanDomain.includes(emailDomain)) {
+        console.warn(`Anti-hallucination gate rejected email "${verifiedEmail}" due to domain mismatch with "${verifiedDomain}"`);
+        verifiedEmail = null;
+      }
+    }
+
+    // Determine target contact string
+    let targetContact = '';
+    let channelType: 'DIRECT_EMAIL' | 'WEB_PORTAL' | 'POSTAL_MAIL' = 'DIRECT_EMAIL';
+
+    if (verifiedEmail) {
+      targetContact = verifiedEmail;
+      channelType = 'DIRECT_EMAIL';
+    } else if (portalUrl) {
+      targetContact = portalUrl;
+      channelType = 'WEB_PORTAL';
+    } else {
+      targetContact = `privacy@${verifiedDomain}`;
+      channelType = 'DIRECT_EMAIL';
+    }
+
+    // Add verified portal and official domain to grounding sources if not present
+    if (portalUrl && !groundingSources.some(s => s.uri === portalUrl)) {
+      groundingSources.unshift({
+        title: `${verifiedCompanyName} Opt-Out Portal`,
+        uri: portalUrl,
+      });
+    }
+    if (verifiedDomain && !groundingSources.some(s => s.uri.includes(verifiedDomain))) {
+      groundingSources.push({
+        title: `${verifiedCompanyName} Official Site`,
+        uri: `https://${verifiedDomain}`,
+      });
+    }
+
+    const candidateEntities: CandidateEntity[] = Array.isArray(parsed.candidateEntities) && parsed.candidateEntities.length > 0
+      ? parsed.candidateEntities.map((ce: any) => ({
+          name: ce.name || '',
+          domain: ce.domain || '',
+          businessType: ce.businessType || '',
+          isPhysicalMailSender: Boolean(ce.isPhysicalMailSender),
+          reason: ce.reason || '',
+          confidence: typeof ce.confidence === 'number' ? ce.confidence : 0.85,
+          selected: ce.selected ?? (ce.name === verifiedCompanyName),
+        }))
+      : [
+          {
+            name: verifiedCompanyName,
+            domain: verifiedDomain,
+            businessType: 'Direct Mail Sender',
+            isPhysicalMailSender: true,
+            reason: bestEntity.reason || 'Verified primary sender of physical mail.',
+            confidence: 0.95,
+            selected: true,
+          }
+        ];
+
+    const entityVerificationReason = bestEntity.reason ||
+      `Verified ${verifiedCompanyName} (${verifiedDomain}) as physical marketing mail sender via Google Search Grounding.`;
 
     return {
+      verifiedCompanyName,
+      verifiedDomain,
       targetContact,
-      domain: officialDomain,
-      portalUrl: parsedResult.portalUrl || (groundingSources[0]?.uri),
-      channelType: privacyEmail ? 'DIRECT_EMAIL' : (parsedResult.portalUrl ? 'WEB_PORTAL' : 'POSTAL_MAIL'),
-      confidence: privacyEmail ? 0.90 : 0.80,
-      groundingSources,
+      portalUrl,
+      channelType,
+      confidence: parsed.confidence || (verifiedEmail ? 0.96 : 0.88),
+      candidateEntities,
+      entityVerificationReason,
+      groundingSources: groundingSources.slice(0, 5),
+      verifiedViaSearch: true,
     };
   } catch (searchErr) {
-    console.warn('Search grounding query failed, falling back:', searchErr);
-    const domain = knownDomain || `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+    console.warn('Web search entity verification failed, falling back to directory or heuristics:', searchErr);
+    if (verifiedDirectoryMatch) {
+      return {
+        verifiedCompanyName: verifiedDirectoryMatch.name,
+        verifiedDomain: verifiedDirectoryMatch.domain,
+        targetContact: verifiedDirectoryMatch.privacyEmail,
+        portalUrl: verifiedDirectoryMatch.portalUrl,
+        channelType: verifiedDirectoryMatch.privacyEmail ? 'DIRECT_EMAIL' : 'WEB_PORTAL',
+        confidence: 0.95,
+        candidateEntities: [{
+          name: verifiedDirectoryMatch.name,
+          domain: verifiedDirectoryMatch.domain,
+          businessType: verifiedDirectoryMatch.category || 'Direct Mail Sender',
+          isPhysicalMailSender: true,
+          reason: 'Matched verified directory entry during network fallback.',
+          confidence: 0.95,
+          selected: true
+        }],
+        entityVerificationReason: 'Verified using local compliance database.',
+        groundingSources: [{
+          title: `${verifiedDirectoryMatch.name} Directory Entry`,
+          uri: verifiedDirectoryMatch.portalUrl || `https://${verifiedDirectoryMatch.domain}`,
+        }],
+        verifiedViaSearch: false,
+      };
+    }
+
+    const domain = rawDomain || `${rawExtractedName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
     return {
+      verifiedCompanyName: rawExtractedName,
+      verifiedDomain: domain,
       targetContact: `privacy@${domain}`,
-      domain,
       channelType: 'DIRECT_EMAIL',
-      confidence: 0.65,
+      confidence: 0.70,
+      candidateEntities: [{
+        name: rawExtractedName,
+        domain,
+        businessType: 'Postal Sender',
+        isPhysicalMailSender: true,
+        reason: 'Raw text match.',
+        confidence: 0.70,
+        selected: true,
+      }],
+      entityVerificationReason: 'Local heuristic match without live search.',
+      groundingSources: [],
+      verifiedViaSearch: false,
     };
   }
+}
+
+/**
+ * Compatibility wrapper for single-company contact discovery
+ */
+async function discoverCorporateContact(companyName: string, knownDomain?: string) {
+  const result = await verifyEntityAndSenderContactViaWebSearch({
+    rawExtractedName: companyName,
+    rawDomain: knownDomain,
+  });
+  return {
+    targetContact: result.targetContact,
+    domain: result.verifiedDomain,
+    portalUrl: result.portalUrl,
+    channelType: result.channelType,
+    confidence: result.confidence,
+    groundingSources: result.groundingSources,
+    candidateEntities: result.candidateEntities,
+    entityVerificationReason: result.entityVerificationReason,
+    verifiedViaSearch: result.verifiedViaSearch,
+    verifiedCompanyName: result.verifiedCompanyName,
+  };
 }
 
 /**

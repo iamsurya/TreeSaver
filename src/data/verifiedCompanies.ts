@@ -552,6 +552,17 @@ export const VERIFIED_COMPANIES: VerifiedCompany[] = [
     category: 'Data Broker',
     notes: 'Major global audience and consumer prospect list compiler.',
     statutoryBasis: 'CCPA § 1798.120 & DMA Choice',
+  },
+  {
+    id: 'drip-drop-marketing',
+    name: 'Drip Drop Marketing',
+    aliases: ['Drip Drop', 'DripDrop', 'DripDrop Marketing', 'Bodega Solutions LLC', 'Bodega Solutions'],
+    domain: 'dripdropmarketing.com',
+    privacyEmail: 'support@dripdropmarketing.com',
+    portalUrl: 'https://optout.dripdropmarketing.com/',
+    category: 'Data Broker',
+    notes: 'Direct mail advertising agency specializing in saturation plastic postcard mailings with dedicated online opt-out system.',
+    statutoryBasis: 'USPS Direct Mail Suppression & CCPA § 1798.120',
   }
 ];
 

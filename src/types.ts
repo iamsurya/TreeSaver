@@ -28,6 +28,16 @@ export interface GroundingSource {
   uri: string;
 }
 
+export interface CandidateEntity {
+  name: string;
+  domain?: string;
+  businessType?: string;
+  isPhysicalMailSender?: boolean;
+  reason?: string;
+  confidence?: number;
+  selected?: boolean;
+}
+
 export interface OptOutRecord {
   id: string;
   userId?: string;
@@ -41,6 +51,11 @@ export interface OptOutRecord {
   companyName: string;
   companyDomain?: string;
   senderAddress?: string;
+
+  // Web Search Entity Disambiguation & Email Verification
+  candidateEntities?: CandidateEntity[];
+  entityVerificationReason?: string;
+  verifiedViaSearch?: boolean;
 
   // Extracted Recipient & Tracking
   recipientName?: string;
@@ -88,6 +103,9 @@ export interface ProcessedMailResult {
   targetContact?: string;
   portalUrl?: string;
   groundingSources?: GroundingSource[];
+  candidateEntities?: CandidateEntity[];
+  entityVerificationReason?: string;
+  verifiedViaSearch?: boolean;
   legalNoticeContent?: string;
 }
 
